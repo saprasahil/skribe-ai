@@ -5,7 +5,7 @@ import PyPDF2
 import io
 
 # Set your OpenAI API key securely
-client = OpenAI(api_key="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")  # 🔐 Replace with your real key
+client = OpenAI(api_key="")  # 🔐 Replace with your real key
 
 # --- Utility Functions ---
 def extract_text_from_file(uploaded_file):
