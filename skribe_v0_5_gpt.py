@@ -1,13 +1,14 @@
-from openai import OpenAI
 import streamlit as st
+from openai import OpenAI
 from docx import Document
 import PyPDF2
 import io
+import os
 
-# Set your OpenAI API key securely
-client = OpenAI(api_key="")  # 🔐 Replace with your real key
+# Secure API key via Streamlit secrets
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# --- Utility Functions ---
+# Extract text from uploaded files
 def extract_text_from_file(uploaded_file):
     if uploaded_file.name.endswith('.pdf'):
         reader = PyPDF2.PdfReader(uploaded_file)
@@ -21,23 +22,24 @@ def extract_text_from_file(uploaded_file):
         text = ""
     return text
 
+# GPT call helper
 def call_openai_gpt(prompt):
     try:
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=[
-                {"role": "user", "content": prompt}
-            ]
+            messages=[{"role": "user", "content": prompt}]
         )
         return response.choices[0].message.content
     except Exception as e:
         return f"Error calling OpenAI: {e}"
 
+# Generate cover letter
 def generate_cover_letter_gpt(job_desc, resume_text):
     prompt = f"""
-Write a personalized cover letter for the following job description and resume.
-Keep it professional and tailored for a mid-senior business analyst role.
-Limit to 300 words.
+Write a personalized cover letter for the job description and resume below.
+
+Tone: Professional and aligned with a mid-senior business analyst role.
+Length: About 250–300 words.
 
 Job Description:
 {job_desc}
@@ -47,10 +49,11 @@ Resume:
 """
     return call_openai_gpt(prompt)
 
+# Tailor resume
 def tailor_resume_gpt(job_desc, resume_text):
     prompt = f"""
 Improve and tailor the resume below to better align with the job description.
-Update the summary, key skills, and experience descriptions to reflect the role requirements.
+Update summary, skills, and experience sections to match the job requirements.
 
 Job Description:
 {job_desc}
@@ -60,6 +63,7 @@ Resume:
 """
     return call_openai_gpt(prompt)
 
+# Save text as DOCX
 def save_as_docx(text):
     doc = Document()
     for line in text.split('\n'):
@@ -69,7 +73,7 @@ def save_as_docx(text):
     buffer.seek(0)
     return buffer
 
-# --- Streamlit UI ---
+# -------------------- Streamlit App --------------------
 st.set_page_config(page_title="Skribe AI – GPT Assistant", layout="centered")
 st.title("📄 Skribe v0.5 – GPT-Powered Job Application Assistant")
 
@@ -92,7 +96,7 @@ resume_text = ""
 if resume_file:
     resume_text = extract_text_from_file(resume_file)
 
-# Step 3: Generate
+# Step 3: Generate Button
 if st.button("✨ Generate AI-Personalized Cover Letter & Resume"):
     if not job_description or not resume_text:
         st.error("Please provide both a job description and a resume.")
